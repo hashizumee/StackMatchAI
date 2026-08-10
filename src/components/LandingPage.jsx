@@ -1,7 +1,14 @@
 import React from 'react';
 import { ArrowRight, TerminalSquare, Brain, Target, Code, CheckCircle, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-export default function LandingPage({ onStart }) {
+export default function LandingPage() {
+  const navigate = useNavigate();
+
+  const onStart = () => {
+    navigate('/upload');
+  };
+
   return (
     <div className="landing-container animate-fade-in">
       {/* Hero Section */}

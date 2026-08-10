@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
 import UploadModule from './components/UploadModule';
@@ -12,53 +13,34 @@ import History from './components/History';
 import Settings from './components/Settings';
 import './index.css';
 
-function App() {
-  const [appState, setAppState] = useState('landing'); // landing, upload, loading, dashboard, etc.
-
-  const handleStart = () => {
-    setAppState('upload');
-  };
-
-  const handleAnalyze = (data) => {
-    setAppState('loading');
-    
-    // Simulasi delay AI (3 detik)
-    setTimeout(() => {
-      setAppState('dashboard');
-    }, 3000);
-  };
-
-  const handleReset = () => {
-    setAppState('upload');
-  };
-
+function AppContent() {
   return (
     <div>
-      <Header activeTab={appState} setActiveTab={setAppState} />
-      
+      <Header />
       <main className="main-container">
-        {appState === 'landing' && <LandingPage onStart={handleStart} />}
-        
-        {appState === 'upload' && (
-          <div className="animate-fade-in"><UploadModule onAnalyze={handleAnalyze} /></div>
-        )}
-
-        {appState === 'loading' && (
-          <div className="animate-fade-in"><LoadingState /></div>
-        )}
-
-        {appState === 'dashboard' && (
-          <div className="animate-fade-in"><Dashboard onReset={handleReset} /></div>
-        )}
-
-        {appState === 'resumes' && <Resumes />}
-        {appState === 'roadmaps' && <Roadmaps />}
-        {appState === 'interview' && <InterviewPrep />}
-        {appState === 'jobs' && <SavedJobs />}
-        {appState === 'history' && <History />}
-        {appState === 'settings' && <Settings />}
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/upload" element={<div className="animate-fade-in"><UploadModule /></div>} />
+          <Route path="/loading" element={<div className="animate-fade-in"><LoadingState /></div>} />
+          <Route path="/dashboard" element={<div className="animate-fade-in"><Dashboard /></div>} />
+          <Route path="/resumes" element={<Resumes />} />
+          <Route path="/roadmaps" element={<Roadmaps />} />
+          <Route path="/interview" element={<InterviewPrep />} />
+          <Route path="/jobs" element={<SavedJobs />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 

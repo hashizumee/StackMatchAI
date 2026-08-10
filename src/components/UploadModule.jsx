@@ -1,34 +1,85 @@
 import React, { useState } from 'react';
-import { Upload, GitBranch, Briefcase, Search } from 'lucide-react';
+import { Upload, GitBranch, Briefcase, Search, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-export default function UploadModule({ onAnalyze }) {
+export default function UploadModule() {
+  const navigate = useNavigate();
   const [github, setGithub] = useState('');
   const [jd, setJd] = useState('');
+  const [file, setFile] = useState(null);
+  const [error, setError] = useState('');
+
+  const handleFileChange = (e) => {
+    const selected = e.target.files[0];
+    if (selected) {
+      if (selected.type !== 'application/pdf') {
+        setError('Mohon unggah file dengan format PDF.');
+        setFile(null);
+        return;
+      }
+      if (selected.size > 5 * 1024 * 1024) {
+        setError('Ukuran file maksimal adalah 5MB.');
+        setFile(null);
+        return;
+      }
+      setError('');
+      setFile(selected);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onAnalyze({ github, jd });
+    setError('');
+
+    if (!file) {
+      setError('Harap unggah CV PDF Anda terlebih dahulu.');
+      return;
+    }
+    if (!github.trim()) {
+      setError('Username GitHub wajib diisi.');
+      return;
+    }
+    if (jd.trim().length < 50) {
+      setError('Job Description terlalu singkat. Minimal 50 karakter.');
+      return;
+    }
+
+    // Navigasi ke halaman loading sambil membawa data formulir
+    navigate('/loading', { state: { github: github.trim(), jd: jd.trim(), file } });
   };
 
   return (
     <div className="card">
+      {error && (
+        <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <AlertCircle size={20} />
+          {error}
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="split-grid">
         {/* Left Column */}
         <div>
           <div className="form-group">
             <label>1. Upload CV (PDF)</label>
-            <div className="upload-box">
-              <Upload size={36} color="var(--primary-color)" style={{ marginBottom: '1rem' }} />
-              <p style={{ color: 'var(--text-main)', fontWeight: '500', marginBottom: '0.25rem' }}>Drop your CV here</p>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>PDF format, up to 5MB</p>
+            <div className="upload-box" style={{ borderColor: file ? 'var(--primary-color)' : 'var(--card-border)' }}>
+              <Upload size={36} color={file ? "var(--primary-color)" : "var(--text-muted)"} style={{ marginBottom: '1rem' }} />
+              {file ? (
+                <p style={{ color: 'var(--primary-color)', fontWeight: '600', marginBottom: '0.25rem' }}>{file.name}</p>
+              ) : (
+                <>
+                  <p style={{ color: 'var(--text-main)', fontWeight: '500', marginBottom: '0.25rem' }}>Drop your CV here</p>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>PDF format, up to 5MB</p>
+                </>
+              )}
               <input 
                 type="file" 
                 accept=".pdf" 
                 style={{ display: 'none' }} 
                 id="cv-upload"
+                onChange={handleFileChange}
               />
               <button type="button" className="btn btn-outline" onClick={() => document.getElementById('cv-upload').click()}>
-                Browse Files
+                {file ? 'Change File' : 'Browse Files'}
               </button>
             </div>
           </div>
