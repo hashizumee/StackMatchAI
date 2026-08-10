@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from '@google/genai';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -17,8 +17,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Gemini.' });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `
       Anda adalah seorang Senior Technical Recruiter dan Software Engineer.
@@ -43,8 +42,12 @@ export default async function handler(req, res) {
       ]
     `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt,
+    });
+    
+    const responseText = response.text;
     
     // Extract JSON from response
     let jsonMatch = responseText.match(/\[[\s\S]*\]/);
