@@ -1,11 +1,25 @@
 import React from 'react';
-import { Target, Code, AlertCircle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { Target, Code, AlertCircle, RefreshCw, CheckCircle, XCircle, Bookmark } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { result } = location.state || {};
+  const { result, jdText } = location.state || {};
+  const [jobSaved, setJobSaved] = React.useState(false);
+
+  const handleSaveJob = () => {
+    if (!jdText) return;
+    const currentJobs = JSON.parse(localStorage.getItem('sm_saved_jobs') || '[]');
+    const newJob = {
+      id: Date.now(),
+      snippet: jdText.substring(0, 50) + '...',
+      fullText: jdText,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    };
+    localStorage.setItem('sm_saved_jobs', JSON.stringify([newJob, ...currentJobs]));
+    setJobSaved(true);
+  };
 
   if (!result) {
     return (
@@ -28,9 +42,14 @@ export default function Dashboard() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.75rem', fontWeight: '700' }}>Analysis Results</h2>
-        <button className="btn btn-primary" onClick={() => navigate('/upload')}>
-          <RefreshCw size={16} /> New Analysis
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn btn-outline" onClick={handleSaveJob} disabled={jobSaved}>
+            <Bookmark size={16} /> {jobSaved ? 'Job Saved' : 'Save Job'}
+          </button>
+          <button className="btn btn-primary" onClick={() => navigate('/upload')}>
+            <RefreshCw size={16} /> New Analysis
+          </button>
+        </div>
       </div>
 
       <div className="dashboard-grid">

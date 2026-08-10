@@ -1,11 +1,23 @@
-import React from 'react';
-import { Bookmark, Building, MapPin, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bookmark, FileText, Calendar, Trash2 } from 'lucide-react';
 
 export default function SavedJobs() {
-  const jobs = [
-    { title: 'Senior Frontend Engineer', company: 'Tokopedia', location: 'Jakarta, Indonesia', salary: 'Rp 20M - 35M / month', match: '85%' },
-    { title: 'Fullstack Web Developer', company: 'Gojek', location: 'Remote', salary: 'Undisclosed', match: '72%' }
-  ];
+  const [jobs, setJobs] = useState([]);
+
+  useEffect(() => {
+    const data = localStorage.getItem('sm_saved_jobs');
+    if (data) {
+      setJobs(JSON.parse(data));
+    }
+  }, []);
+
+  const handleDelete = (id) => {
+    if (window.confirm('Hapus lowongan ini dari penyimpanan lokal?')) {
+      const filtered = jobs.filter(j => j.id !== id);
+      setJobs(filtered);
+      localStorage.setItem('sm_saved_jobs', JSON.stringify(filtered));
+    }
+  };
 
   return (
     <div className="card animate-fade-in">
@@ -13,31 +25,34 @@ export default function SavedJobs() {
         <Bookmark size={24} color="var(--primary-color)" /> Saved Jobs
       </h2>
       <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-        Job descriptions you've analyzed and saved for future reference.
+        Job descriptions you've saved for future reference.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        {jobs.map((job, idx) => (
-          <div key={idx} style={{ padding: '1.5rem', background: 'var(--secondary-bg)', borderRadius: 'var(--border-radius-md)', border: '1px solid var(--card-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <h4 style={{ fontSize: '1.25rem', fontWeight: '700' }}>{job.title}</h4>
-              <div style={{ background: 'rgba(62, 224, 152, 0.1)', color: 'var(--primary-color)', padding: '0.25rem 0.5rem', borderRadius: '0.5rem', fontWeight: '700', fontSize: '0.875rem' }}>
-                {job.match} Match
+      {jobs.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem 0' }}>Belum ada lowongan yang disimpan.</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          {jobs.map((job) => (
+            <div key={job.id} style={{ padding: '1.5rem', background: 'var(--secondary-bg)', borderRadius: 'var(--border-radius-md)', border: '1px solid var(--card-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <h4 style={{ fontSize: '1.125rem', fontWeight: '700' }}>Job Snippet</h4>
+                <button className="btn btn-outline" style={{ padding: '0.25rem 0.5rem', borderRadius: '50%', color: 'var(--accent-danger)', borderColor: 'rgba(248, 113, 113, 0.3)' }} onClick={() => handleDelete(job.id)}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileText size={16} /> {job.snippet}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={16} /> Saved on {job.date}</span>
+              </div>
+
+              <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', maxHeight: '100px', overflowY: 'auto' }}>
+                {job.fullText}
               </div>
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building size={16} /> {job.company}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><MapPin size={16} /> {job.location}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><DollarSign size={16} /> {job.salary}</span>
-            </div>
-
-            <button className="btn btn-outline btn-block" style={{ fontSize: '0.875rem', padding: '0.75rem' }}>
-              View Analysis
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

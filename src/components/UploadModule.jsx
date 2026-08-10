@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, GitBranch, Briefcase, Search, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,14 @@ export default function UploadModule() {
   const [jd, setJd] = useState('');
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const data = localStorage.getItem('sm_settings');
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (parsed.github) setGithub(parsed.github);
+    }
+  }, []);
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];

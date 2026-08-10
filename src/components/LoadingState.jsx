@@ -45,8 +45,38 @@ export default function LoadingState() {
         // 3. AI Analysis
         const result = await analyzePortfolio(cvText, githubData, jd);
 
-        // 4. Go to Dashboard
-        navigate('/dashboard', { state: { result } });
+        // 4. Save to LocalStorage History
+        const newHistoryItem = {
+          id: '#ANL-' + Math.floor(1000 + Math.random() * 9000),
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          role: jd.substring(0, 30) + '...', // We don't have a specific title, so just use a snippet
+          score: result.matchScore,
+          status: 'Completed',
+          result,
+          cvText,
+          jdText: jd,
+          filename: file.name
+        };
+
+        const currentHistory = JSON.parse(localStorage.getItem('sm_history') || '[]');
+        localStorage.setItem('sm_history', JSON.stringify([newHistoryItem, ...currentHistory]));
+
+        // 5. Save CV Text to My Resumes
+        const currentResumes = JSON.parse(localStorage.getItem('sm_resumes') || '[]');
+        if (!currentResumes.find(r => r.filename === file.name)) {
+          localStorage.setItem('sm_resumes', JSON.stringify([{ filename: file.name, cvText, date: newHistoryItem.date }, ...currentResumes]));
+        }
+
+        // 6. Go to Dashboard
+        navigate('/dashboard', { 
+          state: { 
+            result, 
+            cvText, 
+            jdText: jd, 
+            filename: file.name,
+            githubData 
+          } 
+        });
 
       } catch (err) {
         setError(err.message || 'Terjadi kesalahan saat memproses data.');
