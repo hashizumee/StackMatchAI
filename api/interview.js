@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         messages: [{ role: "user", content: prompt }],
-        model: "grok-beta",
+        model: "grok-2-latest",
         response_format: { type: "json_object" },
         temperature: 0.1,
       }),
