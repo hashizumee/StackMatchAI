@@ -1,5 +1,3 @@
-import Groq from 'groq-sdk';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -12,12 +10,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
+    const apiKey = process.env.XAI_API_KEY || process.env.VITE_XAI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Groq.' });
+      return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Grok (xAI).' });
     }
-
-    const groq = new Groq({ apiKey });
 
     const prompt = `
       Anda adalah seorang Senior Technical Recruiter dan Software Engineer.
@@ -44,15 +40,30 @@ export default async function handler(req, res) {
       }
     `;
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.1-8b-instant',
-      response_format: { type: 'json_object' },
-      temperature: 0.1,
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: prompt }],
+        model: "grok-beta",
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+      }),
     });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`xAI API Error ${response.status}: ${errorData}`);
+    }
+
+    const data = await response.json();
+    let text = data.choices[0]?.message?.content || '';
     
-    let text = chatCompletion.choices[0]?.message?.content || '';
-    
+    // Pembersihan tambahan jika model mengembalikan ```json
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     const resultJson = JSON.parse(text);
 
     return res.status(200).json({ questions: resultJson.questions });

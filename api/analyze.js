@@ -1,7 +1,5 @@
-import Groq from 'groq-sdk';
-
 export default async function handler(req, res) {
-  // CORS configuration (optional, if calling from different origin, but good practice)
+  // CORS configuration
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -25,16 +23,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Gunakan API key dari Environment Variable Vercel
-  const apiKey = process.env.VITE_GROQ_API_KEY || process.env.GROQ_API_KEY;
+  // Menggunakan API Key xAI
+  const apiKey = process.env.XAI_API_KEY || process.env.VITE_XAI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'API Key Groq tidak dikonfigurasi di server.' });
+    return res.status(500).json({ error: 'API Key Grok (xAI) tidak dikonfigurasi di server.' });
   }
 
   try {
-    const groq = new Groq({ apiKey });
-
     const prompt = `
 Anda adalah seorang Ahli Rekrutmen Senior dan Technical Assessor.
 Tugas Anda adalah membandingkan profil kandidat (dari CV dan GitHub) dengan Deskripsi Pekerjaan (JD) target.
@@ -74,15 +70,30 @@ Buat analisis yang obyektif dan berikan output HANYA dalam format JSON mentah ta
 Pastikan respons murni JSON yang valid.
     `;
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.1-8b-instant',
-      response_format: { type: 'json_object' },
-      temperature: 0.1,
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: prompt }],
+        model: "grok-beta",
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+      }),
     });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`xAI API Error ${response.status}: ${errorData}`);
+    }
+
+    const data = await response.json();
+    let text = data.choices[0]?.message?.content || '';
     
-    let text = chatCompletion.choices[0]?.message?.content || '';
-    
+    // Pembersihan tambahan jika model mengembalikan ```json
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     const resultJson = JSON.parse(text);
 
     return res.status(200).json(resultJson);
