@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
 export default async function handler(req, res) {
   // CORS configuration
@@ -26,14 +26,14 @@ export default async function handler(req, res) {
   }
 
   // Gunakan API key dari Environment Variable Vercel
-  const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  const apiKey = process.env.VITE_GROQ_API_KEY || process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'API Key Gemini tidak dikonfigurasi di server.' });
+    return res.status(500).json({ error: 'API Key Groq tidak dikonfigurasi di server.' });
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const groq = new Groq({ apiKey });
 
     const prompt = `
 Anda adalah seorang Ahli Rekrutmen Senior dan Technical Assessor.
@@ -74,13 +74,14 @@ Buat analisis yang obyektif dan berikan output HANYA dalam format JSON mentah ta
 Pastikan respons murni JSON yang valid.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: prompt,
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.1-8b-instant',
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
     });
     
-    let text = response.text;
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    let text = chatCompletion.choices[0]?.message?.content || '';
     
     const resultJson = JSON.parse(text);
 
@@ -90,4 +91,3 @@ Pastikan respons murni JSON yang valid.
     return res.status(500).json({ error: 'Gagal melakukan analisis AI dari server. Detail: ' + (error.message || error.toString()) });
   }
 }
-

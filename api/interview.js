@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,12 +12,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Gemini.' });
+      return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Groq.' });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const groq = new Groq({ apiKey });
 
     const prompt = `
       Anda adalah seorang Senior Technical Recruiter dan Software Engineer.
@@ -34,30 +34,28 @@ export default async function handler(req, res) {
       ${jdText}
 
       Berikan respons DALAM FORMAT JSON SAJA yang berisi array objek pertanyaan:
-      [
-        {
-          "question": "pertanyaan wawancara teknis",
-          "reason": "mengapa pertanyaan ini ditanyakan berdasarkan CV/JD"
-        }
-      ]
+      {
+        "questions": [
+          {
+            "question": "pertanyaan wawancara teknis",
+            "reason": "mengapa pertanyaan ini ditanyakan berdasarkan CV/JD"
+          }
+        ]
+      }
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: prompt,
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.1-8b-instant',
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
     });
     
-    const responseText = response.text;
+    let text = chatCompletion.choices[0]?.message?.content || '';
     
-    // Extract JSON from response
-    let jsonMatch = responseText.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('Format balasan AI tidak valid');
-    }
+    const resultJson = JSON.parse(text);
 
-    const questions = JSON.parse(jsonMatch[0]);
-
-    return res.status(200).json({ questions });
+    return res.status(200).json({ questions: resultJson.questions });
 
   } catch (error) {
     console.error("AI Error:", error);
