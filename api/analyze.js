@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 export default async function handler(req, res) {
   // CORS configuration
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -23,14 +25,16 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Menggunakan API Key xAI
-  const apiKey = process.env.XAI_API_KEY || process.env.VITE_XAI_API_KEY;
+  // Gunakan API key dari Environment Variable Vercel
+  const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'API Key Grok (xAI) tidak dikonfigurasi di server.' });
+    return res.status(500).json({ error: 'API Key Gemini tidak dikonfigurasi di server.' });
   }
 
   try {
+    const ai = new GoogleGenAI({ apiKey });
+
     const prompt = `
 Anda adalah seorang Ahli Rekrutmen Senior dan Technical Assessor.
 Tugas Anda adalah membandingkan profil kandidat (dari CV dan GitHub) dengan Deskripsi Pekerjaan (JD) target.
@@ -70,30 +74,14 @@ Buat analisis yang obyektif dan berikan output HANYA dalam format JSON mentah ta
 Pastikan respons murni JSON yang valid.
     `;
 
-    const response = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        messages: [{ role: "user", content: prompt }],
-        model: "grok-4.6",
-        response_format: { type: "json_object" },
-        temperature: 0.1,
-      }),
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt,
     });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`xAI API Error ${response.status}: ${errorData}`);
-    }
-
-    const data = await response.json();
-    let text = data.choices[0]?.message?.content || '';
     
-    // Pembersihan tambahan jika model mengembalikan ```json
+    let text = response.text;
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    
     const resultJson = JSON.parse(text);
 
     return res.status(200).json(resultJson);
@@ -102,3 +90,4 @@ Pastikan respons murni JSON yang valid.
     return res.status(500).json({ error: 'Gagal melakukan analisis AI dari server. Detail: ' + (error.message || error.toString()) });
   }
 }
+

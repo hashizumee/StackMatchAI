@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -10,10 +12,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.XAI_API_KEY || process.env.VITE_XAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Grok (xAI).' });
+      return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Gemini.' });
     }
+
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `
       Anda adalah seorang Senior Technical Recruiter dan Software Engineer.
@@ -30,46 +34,34 @@ export default async function handler(req, res) {
       ${jdText}
 
       Berikan respons DALAM FORMAT JSON SAJA yang berisi array objek pertanyaan:
-      {
-        "questions": [
-          {
-            "question": "pertanyaan wawancara teknis",
-            "reason": "mengapa pertanyaan ini ditanyakan berdasarkan CV/JD"
-          }
-        ]
-      }
+      [
+        {
+          "question": "pertanyaan wawancara teknis",
+          "reason": "mengapa pertanyaan ini ditanyakan berdasarkan CV/JD"
+        }
+      ]
     `;
 
-    const response = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        messages: [{ role: "user", content: prompt }],
-        model: "grok-4.6",
-        response_format: { type: "json_object" },
-        temperature: 0.1,
-      }),
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: prompt,
     });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`xAI API Error ${response.status}: ${errorData}`);
+    
+    const responseText = response.text;
+    
+    // Extract JSON from response
+    let jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      throw new Error('Format balasan AI tidak valid');
     }
 
-    const data = await response.json();
-    let text = data.choices[0]?.message?.content || '';
-    
-    // Pembersihan tambahan jika model mengembalikan ```json
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    const resultJson = JSON.parse(text);
+    const questions = JSON.parse(jsonMatch[0]);
 
-    return res.status(200).json({ questions: resultJson.questions });
+    return res.status(200).json({ questions });
 
   } catch (error) {
     console.error("AI Error:", error);
     return res.status(500).json({ error: 'Gagal menghasilkan pertanyaan wawancara: ' + error.message });
   }
 }
+
