@@ -26,7 +26,7 @@ export default function Roadmaps() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          skillGaps: selectedAnalysis.skillGaps,
+          skillGaps: selectedAnalysis.result.skillGaps,
           role: selectedAnalysis.role 
         })
       });
