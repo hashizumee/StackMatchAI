@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,12 +12,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
+    const apiKey = process.env.ANTHROPIC_AUTH_TOKEN;
+    const baseURL = process.env.ANTHROPIC_BASE_URL;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Groq.' });
+      return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Anthropic.' });
     }
 
-    const groq = new Groq({ apiKey });
+    const anthropic = new Anthropic({ apiKey, baseURL });
 
     const prompt = `
       Anda adalah seorang Senior Technical Recruiter dan Software Engineer.
@@ -44,14 +45,15 @@ export default async function handler(req, res) {
       }
     `;
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
-      response_format: { type: 'json_object' },
+    const chatCompletion = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 2048,
       temperature: 0.1,
+      messages: [{ role: 'user', content: prompt }]
     });
     
-    let text = chatCompletion.choices[0]?.message?.content || '';
+    let text = chatCompletion.content[0].text || '';
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     
     const resultJson = JSON.parse(text);
 
