@@ -51,7 +51,7 @@ export default async function handler(req, res) {
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'llama3-8b-8192',
+      model: 'mixtral-8x7b-32768',
       response_format: { type: 'json_object' },
       temperature: 0.1,
     });
