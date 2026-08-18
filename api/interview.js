@@ -12,8 +12,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.ANTHROPIC_AUTH_TOKEN;
-    const baseURL = process.env.ANTHROPIC_BASE_URL;
+    const apiKey = process.env.ANTHROPIC_AUTH_TOKEN || process.env.VITE_ANTHROPIC_AUTH_TOKEN;
+    const baseURL = process.env.ANTHROPIC_BASE_URL || process.env.VITE_ANTHROPIC_BASE_URL;
     if (!apiKey) {
       return res.status(500).json({ error: 'Server tidak dikonfigurasi dengan API Key Anthropic.' });
     }

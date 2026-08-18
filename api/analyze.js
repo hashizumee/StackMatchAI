@@ -26,8 +26,8 @@ export default async function handler(req, res) {
   }
 
   // Gunakan API key dari Environment Variable Vercel
-  const apiKey = process.env.ANTHROPIC_AUTH_TOKEN;
-  const baseURL = process.env.ANTHROPIC_BASE_URL;
+  const apiKey = process.env.ANTHROPIC_AUTH_TOKEN || process.env.VITE_ANTHROPIC_AUTH_TOKEN;
+  const baseURL = process.env.ANTHROPIC_BASE_URL || process.env.VITE_ANTHROPIC_BASE_URL;
 
   if (!apiKey) {
     return res.status(500).json({ error: 'API Key Anthropic tidak dikonfigurasi di server.' });
